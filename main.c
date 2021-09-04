@@ -6,16 +6,16 @@
 
 #define COMMANDMAXLENGTH 4000
 #define STRINGMAXLENGTH 12
-#define FIRST_DIM_HEAP_ARRAY 300000
+#define FIRST_DIM_HEAP_ARRAY 1500000
 
 typedef struct weight {
-    int positive_weight;
+    unsigned long int positive_weight;
     struct weight *next;
     int node;
 }weight;
 
 typedef struct adiacency{
-    int dist_to_source;
+    unsigned long int dist_to_source;
     weight * list_of_weight;
 }adiacency;
 
@@ -111,14 +111,14 @@ adiacency *cancellaMin_for_dijkstra(heap_for_dijkstra *hfd) {
     return min;
 }
 
-int dijkstra(adiacency *adiacency_list, int adiacency_list_dim, heap_for_dijkstra *hfd){
+unsigned long int dijkstra(adiacency *adiacency_list, int adiacency_list_dim, heap_for_dijkstra *hfd){
     adiacency *current_node;
     while(hfd->heapsize>0){
         current_node=cancellaMin_for_dijkstra(hfd);
         weight *current_weight=current_node->list_of_weight;
         while(current_weight!=NULL){
             if(((adiacency_list[current_weight->node].dist_to_source)>(current_node->dist_to_source+current_weight->positive_weight))
-               && current_node->dist_to_source!=INT_MAX && current_weight->positive_weight!=0){
+               && /*current_node->dist_to_source!=INT_MAX &&*/ current_weight->positive_weight!=0){
                 adiacency_list[current_weight->node].dist_to_source=current_node->dist_to_source+current_weight->positive_weight;
                 MinHeapify_for_dijkstra(hfd, current_weight->node);
             }
@@ -128,7 +128,7 @@ int dijkstra(adiacency *adiacency_list, int adiacency_list_dim, heap_for_dijkstr
 
     int res = 0;
     for(int i=0;i<adiacency_list_dim;i++){
-        if(adiacency_list[i].dist_to_source==INT_MAX){
+        if(adiacency_list[i].dist_to_source==ULLONG_MAX){
             res+=0;
         }else{
             res+=adiacency_list[i].dist_to_source;
@@ -140,7 +140,7 @@ int dijkstra(adiacency *adiacency_list, int adiacency_list_dim, heap_for_dijkstr
 
 typedef struct score {
     int pos;
-    int score_number;
+    unsigned long int score_number;
 }score;
 
 typedef struct heap_for_score{
@@ -270,7 +270,7 @@ int main() {
     int i, counter=0, j=0, weight_counter, parsed_weight;
     char tmp_string[STRINGMAXLENGTH];
     heap_for_dijkstra hfd;
-    hfd.heap_array==NULL;
+    hfd.heap_array=NULL;
 
     quit_string = fgets(command,COMMANDMAXLENGTH, stdin);
     handleFirstLine(command, &DoG, &NoT);
@@ -280,7 +280,7 @@ int main() {
 
     int graphs_counter=0;
 
-    int k=1, current_sp;
+    unsigned long int current_sp;
     heap_for_score hfs;
     hfs.score_array=NULL;
     bool first_score_elemet=true, fist_TopK=true;
@@ -298,7 +298,7 @@ int main() {
                 refresh_heap_for_dijkstra(&hfd, DoG);
             }
             while(j<DoG) {
-                fgets(command, COMMANDMAXLENGTH, stdin);
+                quit_string = fgets(command, COMMANDMAXLENGTH, stdin);
                 weight_counter=0;
                 if(graphs_counter==0){
                     adiacency_list[j].list_of_weight=NULL;
@@ -308,7 +308,7 @@ int main() {
                     adiacency_list[0].dist_to_source = 0;
                     hfd.heap_array[0] = &adiacency_list[0];
                 }else {
-                    adiacency_list[j].dist_to_source = INT_MAX;
+                    adiacency_list[j].dist_to_source = ULLONG_MAX;
                     hfd.heap_array[j] = &adiacency_list[j];
                 }
                 while (weight_counter<DoG) {
@@ -340,15 +340,14 @@ int main() {
                 }
                 j++;
             }
-            j=0;
             current_sp = dijkstra(adiacency_list, DoG, &hfd);
             first_use_of_dijkstra=false;
             if(hfs.score_array==NULL){
                 initialize_heap_for_score(&hfs);
             }
-            if(i>hfs.length){
+            /*if(graphs_counter>hfs.length){
                 make_bigger_heap_array(&hfs);
-            }
+            }*/
             if(first_score_elemet==false) {
                 if (current_sp < hfs.score_array[0].score_number) {
                     hfs.score_array[hfs.heapsize].score_number = hfs.score_array[0].score_number;
@@ -373,8 +372,6 @@ int main() {
                 fist_TopK=false;
             }
         }else{
-            //Caso anomalo
-            return -1;
         }
     }
 
