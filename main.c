@@ -237,15 +237,19 @@ void MinHeapify_for_score(heap_for_score *hfs, int n){
         MinHeapify_for_score(hfs, posmin);
     }
 }
-void build_min_heap_for_score(heap_for_score *hfs){
-    for(int i=hfs->heapsize/2-1;i>=0;i--){
-        MinHeapify_for_score(hfs, i);
-    }
-}
 
-void refresh_heap_for_score(heap_for_score *hfs){
+void refresh_heap_for_score(heap_for_score *hfs, int NoT){
     hfs->tmp_heapsize=hfs->heapsize;
-    build_min_heap_for_score(hfs);
+    /*int i;
+    if(NoT>=hfs->heapsize){
+        for(i=hfs->heapsize-1;i>=0;i--){
+            swap_for_score(&hfs->score_array[i], &hfs->score_array[hfs->heapsize-1-i]);
+        }
+    }else{
+        for(i=0;i<NoT;i++){
+            swap_for_score(&hfs->score_array[i], &hfs->score_array[hfs->heapsize-1-i]);
+        }
+    }*/
 }
 
 int cancellaMin_for_score(heap_for_score *hfs) {
@@ -277,26 +281,30 @@ void add_element_to_hfs(heap_for_score *hfs, unsigned long int score_number, int
 
     }
 }
-void handleTopK(heap_for_score *hfs, int NoT, bool first_TopK){
+void handleTopK(heap_for_score *hfs, int NoT, int graphs_counter){
     int j=0, pos_score;
     char output_string[STRINGMAXLENGTH];
-    hfs->tmp_heapsize=hfs->heapsize;
-    while(j<NoT && j<hfs->heapsize){
-        //printf("Inizio stampa mucchio\n");
-        /*for(int i=0;i<hfs->heapsize;i++){
-            printf("score number: %lu, pos: %d\n", hfs->score_array[i].score_number, hfs->score_array[i].pos);
-        }*/
-        //printf("Fine stampa mucchio\n\n");
-        pos_score = cancellaMin_for_score(hfs);
-        parseIntegerIntoString(pos_score, output_string);
-        fputs(output_string, stdout);
-        if(j<hfs->heapsize-1){
-            fputc(' ', stdout);
+    if(graphs_counter!=0){
+        hfs->tmp_heapsize=hfs->heapsize;
+        while(j<NoT && j<hfs->heapsize){
+            //printf("Inizio stampa mucchio\n");
+            /*for(int i=0;i<hfs->heapsize;i++){
+                printf("score number: %lu, pos: %d\n", hfs->score_array[i].score_number, hfs->score_array[i].pos);
+            }*/
+            //printf("Fine stampa mucchio\n\n");
+            pos_score = cancellaMin_for_score(hfs);
+            parseIntegerIntoString(pos_score, output_string);
+            fputs(output_string, stdout);
+            if(j<hfs->heapsize-1){
+                fputc(' ', stdout);
+            }
+            j++;
+            //fputc('\n', stdout);
         }
-        j++;
-        //fputc('\n', stdout);
+        fputc('\n', stdout);
+    }else{
+        fputc('\n', stdout);
     }
-    fputc('\n', stdout);
 }
 
 int main() {
@@ -394,7 +402,7 @@ int main() {
                 make_bigger_heap_array(&hfs);
             }
             if(first_TopK==false){
-                refresh_heap_for_score(&hfs);
+                refresh_heap_for_score(&hfs, NoT);
             }
             add_element_to_hfs(&hfs, current_sp, graphs_counter);
             graphs_counter++;
@@ -403,7 +411,7 @@ int main() {
                 first_TopK=false;
             }
             //Da commentare se si vuole testare solo il dijkstra
-            handleTopK(&hfs,NoT, first_TopK);
+            handleTopK(&hfs,NoT, graphs_counter);
         }else{
         }
     }
