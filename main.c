@@ -6,7 +6,7 @@
 
 #define COMMANDMAXLENGTH 4000
 #define STRINGMAXLENGTH 12
-#define FIRST_DIM_HEAP_ARRAY 300000
+#define FIRST_DIM_HEAP_ARRAY 1500000
 
 typedef struct weight {
     unsigned long int positive_weight;
@@ -16,6 +16,7 @@ typedef struct weight {
 
 typedef struct adiacency{
     unsigned long int dist_to_source;
+    bool visited;
     weight * list_of_weight;
 }adiacency;
 
@@ -23,6 +24,14 @@ typedef struct heap_for_dijkstra{
     adiacency **heap_array;
     int heapsize;
 }heap_for_dijkstra;
+
+int left(int n){
+    return n*2+1;
+}
+
+int right(int n){
+    return n*2+2;
+}
 
 int power(int base, int exp){
     int res = 1;
@@ -99,6 +108,12 @@ void MinHeapify_for_dijkstra(heap_for_dijkstra *hfd, int n){
     }
 }
 
+void build_min_heap_for_dijkstra(heap_for_dijkstra *hfd){
+    for(int i=(hfd->heapsize/2)-1;i>=0;i--){
+        MinHeapify_for_dijkstra(hfd, i);
+    }
+}
+
 adiacency *cancellaMin_for_dijkstra(heap_for_dijkstra *hfd) {
     if (hfd->heapsize < 1) {
         return NULL;
@@ -107,23 +122,29 @@ adiacency *cancellaMin_for_dijkstra(heap_for_dijkstra *hfd) {
     adiacency *min = hfd->heap_array[0];
     hfd->heap_array[0] = hfd->heap_array[hfd->heapsize - 1];
     hfd->heapsize = hfd->heapsize - 1;
-    MinHeapify_for_dijkstra(hfd, 0);
+    //MinHeapify_for_dijkstra(hfd, 0);
+    build_min_heap_for_dijkstra(hfd);
     return min;
 }
 
 unsigned long int dijkstra(adiacency *adiacency_list, int adiacency_list_dim, heap_for_dijkstra *hfd){
     adiacency *current_node;
-    while(hfd->heapsize>0){
+    while(hfd->heapsize!=0){
         current_node=cancellaMin_for_dijkstra(hfd);
+        //debug
+        current_node->visited=true;
         weight *current_weight=current_node->list_of_weight;
         while(current_weight!=NULL){
             if(((adiacency_list[current_weight->node].dist_to_source)>(current_node->dist_to_source+current_weight->positive_weight))
-               && current_node->dist_to_source!=ULONG_MAX && current_weight->positive_weight!=0){
+               && current_node->dist_to_source!=ULONG_MAX && current_weight->positive_weight!=0 /*debug&& adiacency_list[current_weight->node].visited==false*/){
                 adiacency_list[current_weight->node].dist_to_source=current_node->dist_to_source+current_weight->positive_weight;
-                MinHeapify_for_dijkstra(hfd, current_weight->node);
+                //MinHeapify_for_dijkstra(hfd, current_weight->node);
+                build_min_heap_for_dijkstra(hfd);
+
             }
             current_weight=current_weight->next;
         }
+        build_min_heap_for_dijkstra(hfd);
     }
 
     unsigned long int res = 0;
@@ -182,8 +203,7 @@ void initialize_heap_for_score(heap_for_score *hfs){
 }
 
 void make_bigger_heap_array(heap_for_score *hfs){
-    hfs->score_array=(score *)realloc(hfs->score_array, 2*hfs->length*sizeof(struct score));
-    hfs->length=2*hfs->length;
+    hfs->score_array=(score *)realloc(hfs->score_array, 2*FIRST_DIM_HEAP_ARRAY*sizeof(struct score));
 }
 
 void swap_for_score(score *a, score *b){
@@ -197,31 +217,28 @@ void swap_for_score(score *a, score *b){
 }
 
 void MinHeapify_for_score(heap_for_score *hfs, int n){
-    int l = 2*n;
-    int r = 2*n+1;
-    int posmax;
+    int l = left(n);
+    int r = right(n);
+    int posmin = n;
     if (l<hfs->tmp_heapsize && (hfs->score_array[l].score_number < hfs->score_array[n].score_number ||
                                 (hfs->score_array[l].score_number == hfs->score_array[n].score_number &&
                                  hfs->score_array[l].pos < hfs->score_array[n].pos))){
-        posmax=l;
-    }else{
-        posmax=n;
+        posmin=l;
     }
-    if(r<hfs->tmp_heapsize && (hfs->score_array[r].score_number < hfs->score_array[n].score_number ||
-                               (hfs->score_array[r].score_number == hfs->score_array[n].score_number &&
-                                hfs->score_array[r].pos < hfs->score_array[n].pos))){
-        posmax=r;
+    if(r<hfs->tmp_heapsize && (hfs->score_array[r].score_number < hfs->score_array[posmin].score_number ||
+                               (hfs->score_array[r].score_number == hfs->score_array[posmin].score_number &&
+                                hfs->score_array[r].pos < hfs->score_array[posmin].pos))){
+        posmin=r;
     }
-    if(posmax!=n){
+    if(posmin!=n){
         //SWAP
-        swap_for_score(&hfs->score_array[posmax], &hfs->score_array[n]);
+        swap_for_score(&hfs->score_array[posmin], &hfs->score_array[n]);
 
-        MinHeapify_for_score(hfs, posmax);
+        MinHeapify_for_score(hfs, posmin);
     }
 }
-
 void build_min_heap_for_score(heap_for_score *hfs){
-    for(int i=hfs->heapsize/2;i>=0;i--){
+    for(int i=hfs->heapsize/2-1;i>=0;i--){
         MinHeapify_for_score(hfs, i);
     }
 }
@@ -233,7 +250,7 @@ void refresh_heap_for_score(heap_for_score *hfs){
 
 int cancellaMin_for_score(heap_for_score *hfs) {
     if (hfs->tmp_heapsize < 1) {
-        return -1;
+        return INT_MIN;
     }
 
     int min = hfs->score_array[0].pos;
@@ -243,14 +260,33 @@ int cancellaMin_for_score(heap_for_score *hfs) {
     return min;
 }
 
-void handleTopK(heap_for_score *hfs, int NoT, bool first_TopK){
-    if(first_TopK==false){
-        refresh_heap_for_score(hfs);
+int parent(int i){
+    return (i-1)/2;
+}
+
+void add_element_to_hfs(heap_for_score *hfs, unsigned long int score_number, int pos){
+    int i = hfs->heapsize;
+    hfs->score_array[hfs->heapsize].score_number=score_number;
+    hfs->score_array[hfs->heapsize].pos=pos;
+    hfs->heapsize++;
+    while(i!=0 &&  (hfs->score_array[parent(i)].score_number > hfs->score_array[i].score_number ||
+                    (hfs->score_array[parent(i)].score_number == hfs->score_array[i].score_number &&
+                     hfs->score_array[parent(i)].pos > hfs->score_array[parent(i)].pos))){
+        swap_for_score(&hfs->score_array[i], &hfs->score_array[parent(i)]);
+        i=parent(i);
+
     }
+}
+void handleTopK(heap_for_score *hfs, int NoT, bool first_TopK){
     int j=0, pos_score;
     char output_string[STRINGMAXLENGTH];
     hfs->tmp_heapsize=hfs->heapsize;
     while(j<NoT && j<hfs->heapsize){
+        //printf("Inizio stampa mucchio\n");
+        /*for(int i=0;i<hfs->heapsize;i++){
+            printf("score number: %lu, pos: %d\n", hfs->score_array[i].score_number, hfs->score_array[i].pos);
+        }*/
+        //printf("Fine stampa mucchio\n\n");
         pos_score = cancellaMin_for_score(hfs);
         parseIntegerIntoString(pos_score, output_string);
         fputs(output_string, stdout);
@@ -258,6 +294,7 @@ void handleTopK(heap_for_score *hfs, int NoT, bool first_TopK){
             fputc(' ', stdout);
         }
         j++;
+        //fputc('\n', stdout);
     }
     fputc('\n', stdout);
 }
@@ -284,7 +321,7 @@ int main() {
     unsigned long int current_sp;
     heap_for_score hfs;
     hfs.score_array=NULL;
-    bool first_score_elemet=true, first_TopK=true;
+    bool first_TopK=true;
 
     while(quit==false){
         quit_string = fgets(command,COMMANDMAXLENGTH, stdin);
@@ -307,9 +344,13 @@ int main() {
                 i=0;
                 if(j==0) {
                     adiacency_list[0].dist_to_source = 0;
+                    //debug
+                    adiacency_list[0].visited=false;
                     hfd.heap_array[0] = &adiacency_list[0];
                 }else {
                     adiacency_list[j].dist_to_source = ULONG_MAX;
+                    //debug
+                    adiacency_list[j].visited=false;
                     hfd.heap_array[j] = &adiacency_list[j];
                 }
                 while (weight_counter<DoG) {
@@ -352,30 +393,17 @@ int main() {
             if(graphs_counter>hfs.length){
                 make_bigger_heap_array(&hfs);
             }
-            if(first_score_elemet==false) {
-                if (current_sp < hfs.score_array[0].score_number) {
-                    hfs.score_array[hfs.heapsize].score_number = hfs.score_array[0].score_number;
-                    hfs.score_array[hfs.heapsize].pos = hfs.score_array[0].pos;
-                    hfs.score_array[0].score_number = current_sp;
-                    hfs.score_array[0].pos = graphs_counter;
-                } else {
-                    hfs.score_array[hfs.heapsize].score_number = current_sp;
-                    hfs.score_array[hfs.heapsize].pos = graphs_counter;
-                }
-                hfs.heapsize++;
-            }else {
-                hfs.score_array[0].score_number = current_sp;
-                hfs.score_array[0].pos = graphs_counter;
-                first_score_elemet = false;
-                hfs.heapsize++;
+            if(first_TopK==false){
+                refresh_heap_for_score(&hfs);
             }
+            add_element_to_hfs(&hfs, current_sp, graphs_counter);
             graphs_counter++;
         }else if(command[0]=='T' && command!=NULL){
-            //Da commentare se si vuole testare solo il dijkstra
-            handleTopK(&hfs,NoT, first_TopK);
             if(first_TopK==true){
                 first_TopK=false;
             }
+            //Da commentare se si vuole testare solo il dijkstra
+            handleTopK(&hfs,NoT, first_TopK);
         }else{
         }
     }
