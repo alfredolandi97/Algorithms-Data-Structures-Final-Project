@@ -1,5 +1,5 @@
 # Algorithms-Data-Structures-Final-Project
-Obiettivo del progetto è realizzare un "graph ranker", ovvero un programma che dati in input n grafi e k numero di grafi migliori (non necessariamente vengono
+Obiettivo del progetto è realizzare un "GraphRanker", ovvero un programma che dati in input n grafi e k numero di grafi migliori (non necessariamente vengono
 prima inseriti tutti i grafi e alla fine viene chiesto il numero di grafi migliori in quanto i due comandi sono indipendenti e posso essere digitati in qualunque momento)
 stampa i k migliori grafi con somma dei cammini minimi, dalla sorgente verso qualunque altro nodo, più piccola possibile.
 Il file base.txt, presente nella root principale, fornisce un semplice esempio del funzionamento basilare del programma; per test più complessi, che stressano sia
